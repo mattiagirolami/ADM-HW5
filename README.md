@@ -4,5 +4,5 @@ Controllate che ho centrato il punto delle funzioni perchè ho sempre il dubbio 
 
 * Aggiornamento (Mattia): Ho fatto la parte che dicevi qui sopra, domani faccio la funzione 3. Date un'occhiata alla 2 e ditemi se vi piace e/o se devo cambiare qualcosa. 
 
-Ho fatto la Command Line però se potete provatela che non l'avevo mai fatta prima quindi non vorrei aver sbagliato qualcosa inconsapevolmente.
+* Ho fatto la Command Line però se potete provatela che non l'avevo mai fatta prima quindi non vorrei aver sbagliato qualcosa inconsapevolmente.
 
