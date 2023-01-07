@@ -7,3 +7,5 @@ Controllate che ho centrato il punto delle funzioni perchè ho sempre il dubbio 
 * Ho fatto la Command Line però se potete provatela che non l'avevo mai fatta prima quindi non vorrei aver sbagliato qualcosa inconsapevolmente.
 
 * Aggiornamento (Mattia) : Ho fatto (credo) la functionality 3 e ho separato le funzioni dal file principali. Le funzioni sono nel file 'my_functions.py' mentre il main è il 'clean_main.ipynb'
+
+* Bestemmiando forte (Mattia)
