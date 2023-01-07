@@ -128,6 +128,71 @@ def degree_metric(graph):
         deg[node]=graph.degree[node]/(len(graph.nodes())-1)
     return deg #IF YOU COMPARE IT WITH THE BUILT IN FUNCTION THERE IS A DIFFERENCE OF e-16 IN THE VALUES, BASICALLY ARE THE SAME
 
+#Functionality 5
+
+def edge_to_remove(graph):
+  G_dict = nx.edge_betweenness_centrality(graph)
+  edge = ()
+
+  # extract the edge with highest edge betweenness centrality score
+  for key, value in sorted(G_dict.items(), key=lambda item: item[1], reverse = True):
+      edge = key
+      break
+
+  return edge
+
+def girvan_newman(graph):
+	# find number of connected components
+	sg = nx.connected_components(graph)
+	sg_count = nx.number_connected_components(graph)
+
+	while(sg_count == 1):
+		graph.remove_edge(edge_to_remove(graph)[0], edge_to_remove(graph)[1])
+		sg = nx.connected_components(graph)
+		sg_count = nx.number_connected_components(graph)
+
+	return sg
+
+def label_propagation(graph):
+    # make a deep copy of the graph to preserve the original
+    graph = graph.copy()
+    
+    # assign a unique label to each node in the graph
+    for i, node in enumerate(graph.nodes()):
+        graph.nodes[node]['label'] = i
+    
+    # initialize a flag to indicate whether the labels have changed
+    labels_changed = True
+    
+    while labels_changed:
+        labels_changed = False
+        
+        # iterate over the nodes in the graph
+        for node in graph.nodes():
+            # get the labels of the node's neighbors
+            neighbor_labels = [graph.nodes[neighbor]['label'] for neighbor in graph.neighbors(node)]
+            
+            # if the node has no neighbors, skip it
+            if len(neighbor_labels) == 0:
+                continue
+            
+            # get the most common label among the node's neighbors
+            most_common_label = max(set(neighbor_labels), key=neighbor_labels.count)
+            
+            # if the most common label is not the node's current label, update the label
+            if graph.nodes[node]['label'] != most_common_label:
+                graph.nodes[node]['label'] = most_common_label
+                labels_changed = True
+    
+    # group the nodes into communities based on their labels
+    communities = {}
+    for node, data in graph.nodes(data=True):
+        label = data['label']
+        if label not in communities:
+            communities[label] = []
+        communities[label].append(node)
+    
+    return list(communities.values())
 
 
 
