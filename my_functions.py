@@ -12,48 +12,28 @@ def TOP_N(N,G_hero_net,edges_df):
     subnodes=set([el for el in edges_df.groupby('hero').count().sort_values(by=['comic'],ascending=False).head(N).index])
     return G_hero_net.subgraph(subnodes)
 
-def number_of_nodes(graph_type,graph):
-    if graph_type == 1 :
-        print(f"The graph have " + str(graph.number_of_nodes()) +  " nodes")
-        return
-    elif graph_type == 2 :
-        comic=0
-        hero=0
-        attr=nx.get_node_attributes(graph,'type')
-        for k in graph.nodes:
-            if (attr[k]=='comic'):
-                comic+=1
-            else:
-                hero+=1
-        print(f"The graph have " + str(comic) +  " nodes of type: COMIC")
-        print(f"The graph have " + str(hero) +  " nodes of type: HERO")
-        return 
+def number_of_collaborations_dict(graph_type,graph):
+    if graph_type==2:
+        warning_dict = ('Valid only for type 1')
+        return warning_dict
     else:
-        return ('Wrong type number')
-    
-def number_of_collaborations(graph_type,graph):
-    if graph_type!=1:
-        print('Valid only for type 1')
-        return
-    else:
+        node_list = []
+        degree_node_list = []
         for node in graph:
-            print( node + " has " + str(graph.degree(node)) + " collaborations.")
-        return
+            node_list.append(node)
+            degree_node_list.append(graph.degree(node))
+        colab_dict = dict(zip(node_list, degree_node_list))
+        return colab_dict
     
-def number_of_hero_in_each_comic(graph_type):
+def number_of_hero_in_each_comic_dict(graph_type):
     if graph_type!=2:
-        print('number_of_hero_in_each_comic: Valid only for type 2')
-
-        return
+        warning = ('number_of_hero_in_each_comic: Valid only for type 2')
+        return warning
     else:
         attr=nx.get_node_attributes(G_edges_net,'type')
-        List_hero=[i for i in G_edges_net.nodes if attr[i]=='hero']
-        tmp=0
-        for hero in List_hero:
-            if G_edges_net.degree(hero)==12651:
-                print( hero + " has appeared in each comic")
-                tmp+=1
-        return tmp
+        List_comics=[i for i in G_edges_net.nodes if attr[i]=='comic']
+        Degree_comics=[G_edges_net.degree(j) for j in List_comics]
+        return dict(zip(List_comics,Degree_comics))
     
 def degree_distribution(graph):
     deg = [graph.degree(n) for n in graph.nodes()]
@@ -67,7 +47,6 @@ def degree_mean(graph):
 def nodes_hubs(graph):
     deg = [graph.degree(n) for n in graph.nodes()]
     percentile = np.percentile(deg, 95)
-
     return [n for n in graph.nodes() if graph.degree(n) > percentile]
 
 def graph_density(graph):
@@ -77,6 +56,39 @@ def graph_density(graph):
     density = edges_count/ max_edges
     return density
 
+def number_of_nodes(graph_type,graph):
+    if graph_type == 1 :
+        return graph.number_of_nodes()
+    elif graph_type == 2 :
+        comic=0
+        hero=0
+        attr=nx.get_node_attributes(G_edges_net,'type')
+        Attr_comic=[i for i in G_edges_net.nodes if str(attr[i])=='comic']
+        Attr_hero=[i for i in G_edges_net.nodes if str(attr[i])=='hero']
+        return [len(Attr_comic),len(Attr_hero)]
+    else:
+        return ('Wrong type number')
+    
+## Visualization 1
+def Viz1_graph_info(num_nodes, dens, avg_degree, density, graph_type):
+    graph_info = pd.DataFrame()
+    if graph_type == 1:
+        graph_info['Number of nodes'] = [num_nodes]
+        graph_info['Density'] = [dens]
+        graph_info['Avg Degree'] = [avg_degree]
+        graph_info['Sparse or Dense'] = [density]
+    else:
+        graph_info['Number of comic nodes'] = [num_nodes[0]]
+        graph_info['Number of hero nodes'] = [num_nodes[1]]
+        graph_info['Density'] = [dens]
+        graph_info['Avg Degree'] = [avg_degree]
+        graph_info['Sparse or Dense'] = [density]
+    return graph_info
+
+def Viz1_hubs(hubs):
+    graph_hubs = pd.DataFrame()
+    graph_hubs['Hubs'] = [*hubs]
+    return graph_hubs
 
 ## Functionality 2
 damping_factor = 0.85
@@ -128,6 +140,25 @@ def degree_metric(graph):
         deg[node]=graph.degree[node]/(len(graph.nodes())-1)
     return deg #IF YOU COMPARE IT WITH THE BUILT IN FUNCTION THERE IS A DIFFERENCE OF e-16 IN THE VALUES, BASICALLY ARE THE SAME
 
+#Visualization 2
+
+def Vis2_table_maker(metric, graph_output, node_output):
+    res = 0
+    for value in graph_output.values():
+        res += value
+    avg_metric = res / len(graph_output)
+    Vis2_table = pd.DataFrame()
+    Vis2_table['Requested centrality measure'] = [metric]
+    Vis2_table['All nodes in network (avg)'] = [avg_metric]
+    Vis2_table['Given node'] = [node_output]
+    return Vis2_table
+
+#Functionality 4
+
+def min_cut(graph, heroA, heroB):
+    min_cut = nx.minimum_edge_cut(graph, heroA, heroB)
+    return (min_cut)
+
 #Functionality 5
 
 def edge_to_remove(graph):
@@ -141,59 +172,32 @@ def edge_to_remove(graph):
 
   return edge
 
-def girvan_newman(graph):
+def girvan_newman(graph, n_communities):
+    
 	# find number of connected components
 	sg = nx.connected_components(graph)
 	sg_count = nx.number_connected_components(graph)
-
-	while(sg_count == 1):
+	count = 0
+ 
+	while(sg_count < n_communities):
 		graph.remove_edge(edge_to_remove(graph)[0], edge_to_remove(graph)[1])
 		sg = nx.connected_components(graph)
+		count += 1
 		sg_count = nx.number_connected_components(graph)
 
-	return sg
+	sg = list(nx.connected_components(graph))
 
-def label_propagation(graph):
-    # make a deep copy of the graph to preserve the original
-    graph = graph.copy()
-    
-    # assign a unique label to each node in the graph
-    for i, node in enumerate(graph.nodes()):
-        graph.nodes[node]['label'] = i
-    
-    # initialize a flag to indicate whether the labels have changed
-    labels_changed = True
-    
-    while labels_changed:
-        labels_changed = False
-        
-        # iterate over the nodes in the graph
-        for node in graph.nodes():
-            # get the labels of the node's neighbors
-            neighbor_labels = [graph.nodes[neighbor]['label'] for neighbor in graph.neighbors(node)]
-            
-            # if the node has no neighbors, skip it
-            if len(neighbor_labels) == 0:
-                continue
-            
-            # get the most common label among the node's neighbors
-            most_common_label = max(set(neighbor_labels), key=neighbor_labels.count)
-            
-            # if the most common label is not the node's current label, update the label
-            if graph.nodes[node]['label'] != most_common_label:
-                graph.nodes[node]['label'] = most_common_label
-                labels_changed = True
-    
-    # group the nodes into communities based on their labels
-    communities = {}
-    for node, data in graph.nodes(data=True):
-        label = data['label']
-        if label not in communities:
-            communities[label] = []
-        communities[label].append(node)
-    
-    return list(communities.values())
+	return (sg, count)
 
+#Visualization 5
+
+def table_of_communities(comm):
+    toc = pd.DataFrame(columns=['Heroes in each community'])
+    toc.style.set_properties(**{'text-align': 'center'}, subset='columns')
+    for i in range(len(comm)):
+        toc.loc[f'Community_{i+1}'] = [comm[i]]
+    
+    return toc
 
 
 
